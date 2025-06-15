@@ -1,1 +1,1 @@
-##Lazer Trouble file##
+*Lazer Trouble file*
