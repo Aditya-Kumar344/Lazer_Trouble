@@ -2,7 +2,7 @@ using UnityEngine;
 using UnityEngine.XR.ARFoundation;
 using UnityEngine.XR.ARSubsystems;
 using UnityEngine.UI;
-using TMPro; // ✅ TextMeshPro support
+using TMPro;
 using System.Collections.Generic;
 
 public class ARObjectPlacer : MonoBehaviour
@@ -13,14 +13,24 @@ public class ARObjectPlacer : MonoBehaviour
     public Button placeButton;
 
     [Header("UI")]
-    public TextMeshProUGUI bounceText; // ✅ Use TMP for display
+    public TextMeshProUGUI bounceText;
 
     private bool objectPlaced = false;
+    private GameObject placedObject;
 
     void Start()
     {
         placeButton.onClick.AddListener(PlaceObject);
         bounceText.gameObject.SetActive(false);  // Hide initially
+    }
+
+    void Update()
+    {
+        // Update bounce counter display if object is placed
+        if (objectPlaced && bounceText.gameObject.activeInHierarchy)
+        {
+            bounceText.text = $"Bounces: {LaserData.globalBounce}";
+        }
     }
 
     void PlaceObject()
@@ -34,19 +44,17 @@ public class ARObjectPlacer : MonoBehaviour
         {
             Pose pose = hits[0].pose;
 
-            GameObject placedObject = Instantiate(objectPrefab, pose.position, pose.rotation);
+            placedObject = Instantiate(objectPrefab, pose.position, pose.rotation);
             objectPlaced = true;
 
             // Hide place button
             placeButton.gameObject.SetActive(false);
 
-            // ✅ Try to get LaserBeam from prefab or children
-            LaserBeam beam = placedObject.GetComponentInChildren<LaserBeam>();
-            int bounceCount = beam != null ? beam.startBounce : 0;
-
-            // ✅ Update and show bounce text
-            bounceText.text = $"Bounces: {bounceCount}";
+            // Show bounce counter UI
+            bounceText.text = $"Bounces: {LaserData.globalBounce}";
             bounceText.gameObject.SetActive(true);
+
+            Debug.Log($"AR Object placed! Initial bounce count: {LaserData.globalBounce}");
         }
         else
         {
