@@ -10,55 +10,46 @@ public class ARObjectPlacer : MonoBehaviour
     [Header("AR Placement")]
     public GameObject objectPrefab;
     public ARRaycastManager raycastManager;
-    public Button placeButton;
-
+    
     [Header("UI")]
     public TextMeshProUGUI bounceText;
-
-    private bool objectPlaced = false;
+    
+    [HideInInspector] public bool objectPlaced = false;
     private GameObject placedObject;
 
     void Start()
     {
-        placeButton.onClick.AddListener(PlaceObject);
         bounceText.gameObject.SetActive(false);  // Hide initially
     }
 
     void Update()
     {
-        // Update bounce counter display if object is placed
         if (objectPlaced && bounceText.gameObject.activeInHierarchy)
         {
             bounceText.text = $"Bounces: {LaserData.globalBounce}";
         }
     }
 
-    void PlaceObject()
+    public void PlaceObjectAtPosition(Vector3 position)
     {
         if (objectPlaced) return;
 
+        // Check if position is on a detected plane
         List<ARRaycastHit> hits = new List<ARRaycastHit>();
-        Vector2 screenCenter = new Vector2(Screen.width / 2, Screen.height / 2);
-
-        if (raycastManager.Raycast(screenCenter, hits, TrackableType.PlaneWithinPolygon))
+        if (raycastManager.Raycast(new Vector2(Screen.width/2, Screen.height/2), hits, TrackableType.PlaneWithinPolygon))
         {
-            Pose pose = hits[0].pose;
-
-            placedObject = Instantiate(objectPrefab, pose.position, pose.rotation);
-            objectPlaced = true;
-
-            // Hide place button
-            placeButton.gameObject.SetActive(false);
-
-            // Show bounce counter UI
-            bounceText.text = $"Bounces: {LaserData.globalBounce}";
-            bounceText.gameObject.SetActive(true);
-
-            Debug.Log($"AR Object placed! Initial bounce count: {LaserData.globalBounce}");
+            // Use the plane's rotation
+            placedObject = Instantiate(objectPrefab, position, hits[0].pose.rotation);
         }
         else
         {
-            Debug.Log("No plane detected under center of screen.");
+            // Fallback to horizontal placement
+            placedObject = Instantiate(objectPrefab, position, Quaternion.identity);
         }
+        
+        objectPlaced = true;
+        bounceText.text = $"Bounces: {LaserData.globalBounce}";
+        bounceText.gameObject.SetActive(true);
+        Debug.Log($"AR Object placed! Initial bounce count: {LaserData.globalBounce}");
     }
 }
